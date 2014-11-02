@@ -1,0 +1,51 @@
+@()(implicit request: RequestHeader)
+
+@import com.mle.beam.Players
+
+@basePage("MusicBeamer") {
+    <div class="container">
+        @bs.rowColumn("col-md-12") {
+            @util.div("page-header") {
+                <h1>MusicBeamer <small>Stream music from your mobile device to this PC.</small></h1>
+            }
+        }
+        <div id="initial" class="row">
+            <div class="col-md-4">
+                <p id="status" class="lead">Initializing...</p>
+            </div>
+        </div>
+        <div id="splash" class="hidden">
+            @bs.rowColumn("col-md-12 centered") {
+                <img id="qr" src="@routes.Assets.at("img/guitar.png")" class="auto-height"/>
+            }
+            @bs.row {
+                @util.div("col-md-4") {
+                    <p class="lead">Get the <strong>MusicPimp</strong> app for
+                        <a href="https://play.google.com/store/apps/details?id=org.musicpimp">Android</a>,
+                        <a href="http://www.amazon.com/gp/product/B00GVHTEJY/ref=mas_pm_musicpimp">Kindle Fire</a>,
+                        <a href="http://www.windowsphone.com/s?appid=84cd9030-4a5c-4a03-b0ab-4d59c2fa7d42">
+                            Windows Phone</a> or
+                        <a href="http://apps.microsoft.com/windows/en-us/app/musicpimp/73b9a42c-e38a-4edf-ac7e-00672230f7b6">
+                            Windows 8</a>.</p>
+                }
+                @util.div("col-md-4") {
+                    <p class="lead">Scan the QR code above.</p>
+                }
+                @util.div("col-md-4") {
+                    <p class="lead">Start playback from your mobile device.</p>
+                }
+            }
+        </div>
+        <div id="playback" class="hidden">
+            @bs.rowColumn("col-md-6 col-md-offset-3") {
+                <audio id="player" autoplay preload="none" controls>
+                    You need to update your browser to support this feature.</audio>
+            }
+            @bs.rowColumn("col-md-6 col-md-offset-3") {
+                <img id="cover" src="@routes.Assets.at("img/guitar.png")"/>
+            }
+        </div>
+        <script src="@routes.Assets.at("js/player.js")"></script>
+        @wsopen(Players.wsUrl(request))
+    </div>
+}
