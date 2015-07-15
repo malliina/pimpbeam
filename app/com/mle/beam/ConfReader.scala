@@ -1,5 +1,7 @@
 package com.mle.beam
 
+import java.nio.file.{Paths, Path}
+
 import play.api.{Configuration, Play}
 import com.mle.util.BaseConfigReader
 
@@ -12,6 +14,10 @@ class ConfReader extends BaseConfigReader[BeamConf] {
   val portKey = "beam.port"
   val sslPortKey = "beam.sslPort"
   val defaultConf = BeamConf("beam.musicpimp.org", port = 80, sslPort = 443)
+
+  override def userHomeConfPath: Path = Paths get "nonexistent"
+
+  override def resourceCredential: String = "nonexistent"
 
   override def loadOpt: Option[BeamConf] =
     fromEnvOpt orElse fromSysPropsOpt orElse fromAppConfOpt orElse Some(defaultConf)

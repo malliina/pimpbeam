@@ -3,6 +3,7 @@ package controllers
 import java.util.UUID
 
 import com.mle.beam._
+import com.mle.play.AppConf
 import com.mle.play.BeamStrings._
 import com.mle.play.auth.BasicCredentials
 import com.mle.play.controllers.{AuthResult, BaseController, BaseSecurity}
@@ -15,7 +16,7 @@ import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.iteratee._
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json._
-import play.api.libs.ws.WSRequestHolder
+import play.api.libs.ws.{WSRequest, WSRequestHolder}
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -31,8 +32,8 @@ object Home extends Controller with BaseController with BaseSecurity with Log {
 
   // reads settings
   val beamConf: BeamConf = ConfReader.load
-  var isHttpAvailable = false
-  var isHttpsAvailable = false
+  var isHttpAvailable = AppConf.isHttpAvailable
+  var isHttpsAvailable = AppConf.isHttpsAvailable
 
   def ping = Action(NoCacheOk(BeamMessages.version))
 
@@ -87,7 +88,7 @@ object Home extends Controller with BaseController with BaseSecurity with Log {
    * @return the result
    * @see https://www.playframework.com/documentation/2.3.x/ScalaWS
    */
-  def streamedRequest(requestHolder: WSRequestHolder, onError: Int => Result = Status): Future[Result] = {
+  def streamedRequest(requestHolder: WSRequest, onError: Int => Result = Status): Future[Result] = {
     requestHolder.getStream().map(pair => {
       val (response, body) = pair
       def header(name: String) = response.headers.get(name).flatMap(_.headOption)

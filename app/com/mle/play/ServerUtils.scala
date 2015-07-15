@@ -9,24 +9,25 @@ import org.jboss.netty.channel.Channel
 import com.mle.util.{Utils, Util, Log}
 
 class ServerUtils(server: NettyServer) extends Log {
-  val httpsPort = port(_.HTTPS)
-  val httpPort = port(_.HTTP)
-  val isHttpAvailable = httpPort.isDefined
-  val isHttpsAvailable = httpsPort.isDefined
+  val tmp: PlayLifeCycle = ???
+//  val httpsPort = port(_.HTTPS)
+//  val httpPort = port(_.HTTP)
+//  val isHttpAvailable = httpPort.isDefined
+//  val isHttpsAvailable = httpsPort.isDefined
 
-  /**
-   * Does not work if the HTTPS port is excluded from the request's <code>host</code> member.
-   *
-   * @param request the incoming request
-   * @return true if the request was made over HTTPS, false otherwise
-   */
-  def isHttps(request: RequestHeader): Boolean = {
-    PlayUtils.logHeaders(request)
-    httpsPort.exists(sslPort => request.host.contains(s":$sslPort"))
-  }
+//  /**
+//   * Does not work if the HTTPS port is excluded from the request's <code>host</code> member.
+//   *
+//   * @param request the incoming request
+//   * @return true if the request was made over HTTPS, false otherwise
+//   */
+//  def isHttps(request: RequestHeader): Boolean = {
+//    PlayUtils.logHeaders(request)
+//    httpsPort.exists(sslPort => request.host.contains(s":$sslPort"))
+//  }
 
-  def port(req: RequestHeader): Int =
-    (if (isHttps(req)) httpsPort else httpPort) orElse ServerUtils.portFromHost(req) getOrElse 80
+//  def port(req: RequestHeader): Int =
+//    (if (isHttps(req)) httpsPort else httpPort) orElse ServerUtils.portFromHost(req) getOrElse 80
 
   private def port(f: NettyServer => Option[(ServerBootstrap, Channel)]): Option[Int] =
     for {

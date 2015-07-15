@@ -1,9 +1,7 @@
 package com.mle.beam
 
-import com.mle.play.auth.BasicCredentials
-import com.mle.play.controllers.{AuthResult, BaseSecurity}
+import com.mle.play.controllers.AuthResult
 import com.mle.play.ws.SyncAuth
-import controllers.Home
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json.JsValue
 import play.api.mvc.{Call, RequestHeader}
@@ -17,7 +15,6 @@ object Players extends Players with BeamClientStore[PlayerClient]
 trait Players
   extends BeamWebSocket[PlayerClient]
   with ClientStore[PlayerClient, JsValue]
-  with BaseSecurity
   with SyncAuth {
 
   def newClient(user: AuthSuccess, channel: Channel[Message])(implicit request: RequestHeader): Client =
@@ -43,11 +40,8 @@ trait Players
 
   override def openSocketCall: Call = routes.Players.openSocket()
 
-  override def validateCredentials(creds: BasicCredentials): Boolean =
-    Home.validateCredentials(creds)
-
   override def authenticate(implicit request: RequestHeader): Option[AuthResult] =
-    authenticateFromSession(request).map(u => AuthResult(u))
+    PlayerSecurity.authenticate(request)
 
   /**
    *

@@ -19,13 +19,11 @@ object BuildBuild extends Build {
   val mleGroup = "com.github.malliina"
 
   def sbtPlugins = Seq(
-    "com.typesafe.play" % "sbt-plugin" % "2.3.5",
-    "com.timushev.sbt" % "sbt-updates" % "0.1.2",
-    "com.eed3si9n" % "sbt-buildinfo" % "0.3.0",
-    mleGroup %% "sbt-packager" % "1.2.2",
-    mleGroup %% "sbt-paas-deployer" % "1.0.0",
-    mleGroup %% "sbt-utils" % "0.0.5",
-    mleGroup %% "sbt-play" % "0.1.1"
+    "com.typesafe.play" % "sbt-plugin" % "2.4.2",
+    "com.eed3si9n" % "sbt-buildinfo" % "0.4.0",
+    mleGroup %% "sbt-packager" % "1.8.0",
+    mleGroup %% "sbt-utils" % "0.2.0",
+    mleGroup %% "sbt-play" % "0.3.1"
   ) map addSbtPlugin
 
   override lazy val projects = Seq(root)
