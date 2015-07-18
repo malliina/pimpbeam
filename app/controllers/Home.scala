@@ -32,8 +32,8 @@ object Home extends Controller with BaseController with BaseSecurity with Log {
 
   // reads settings
   val beamConf: BeamConf = ConfReader.load
-  var isHttpAvailable = AppConf.isHttpAvailable
-  var isHttpsAvailable = AppConf.isHttpsAvailable
+  lazy val isHttpAvailable = AppConf.isHttpAvailable
+  lazy val isHttpsAvailable = AppConf.isHttpsAvailable
 
   def ping = Action(NoCacheOk(BeamMessages.version))
 

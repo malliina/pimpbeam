@@ -1,7 +1,7 @@
 import com.mle.sbt.unix.LinuxKeys.{httpPort, httpsPort}
 import com.mle.sbt.unix.LinuxPlugin
 import com.mle.sbtplay.PlayProjects
-import com.typesafe.sbt.SbtNativePackager.Linux
+import com.typesafe.sbt.SbtNativePackager.{ Universal, Linux }
 import com.typesafe.sbt.packager
 import sbt.Keys._
 import sbt._
@@ -13,7 +13,7 @@ object BeamBuild extends Build {
     .enablePlugins(sbtbuildinfo.BuildInfoPlugin)
 
   lazy val beamSettings = Seq(
-    version := "1.8.8",
+    version := "1.8.9",
     scalaVersion := "2.11.7",
     libraryDependencies ++= deps,
     retrieveManaged := false,
@@ -29,7 +29,8 @@ object BeamBuild extends Build {
   def nativeSettings = LinuxPlugin.playSettings ++ Seq(
     httpPort in Linux := Option("8456"),
     httpsPort in Linux := Option("8457"),
-    packager.Keys.maintainer := "Michael Skogberg <malliina123@gmail.com>"
+    packager.Keys.maintainer := "Michael Skogberg <malliina123@gmail.com>",
+    javaOptions in Universal += "-Dlogger.resource=prod-logger.xml"
   )
 
   val myGroup = "com.github.malliina"
