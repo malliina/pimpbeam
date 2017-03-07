@@ -22,13 +22,13 @@ class PlayerClient(user: Username, channel: SourceQueue[JsValue])
 
   def audioChannel = streamer.channel
 
-  /**
-    * Ends the current stream and replaces it with a new one, then sends a reset message to the client so that the client
+  /** Ends the current stream and replaces it with a new one, then sends a reset message to the client so that the client
     * will receive the newly created stream instead.
     *
     * This is used when the user starts playing a new track, discarding any currently playing stream.
     */
   def resetStream(): Unit = {
+    log info s"Resetting streaming for '$user'..."
     streamer.eofAndEnd()
     streamer = StreamManager.empty()
     // instructs the client to GET /stream

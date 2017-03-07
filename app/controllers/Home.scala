@@ -67,7 +67,7 @@ class Home(beamConf: BeamConf,
   def index = Action { request =>
     val user = UUID.randomUUID().toString
     val remoteIP = request.remoteAddress
-    log info s"Created user: $user from: $remoteIP"
+    log info s"Created user '$user' from '$remoteIP'."
     Ok(BeamTags.index).withSession(
       Security.username -> user
     )
@@ -140,18 +140,16 @@ class Home(beamConf: BeamConf,
     SUPPORTS_TLS -> isHttpsAvailable
   )
 
-  /**
-    * Opens a connection to the client by returning a chunked HTTP response. This connection streams music to the client.
+  /** Opens a connection to the client by returning a chunked HTTP response. This connection streams music to the client.
     *
     * The browser sets the audio source to "stream" only after being directed by the server; therefore we can require it
     * to be authenticated by this time, as the reception of a message already implies it is connected and authenticated.
     */
   def stream = PlayerSecureAction { player =>
     Action { req =>
-      log info s"Sending stream to player: ${player.user}"
-      Ok.chunked(player.stream).withHeaders(
-        CACHE_CONTROL -> HttpConstants.NoCache,
-        CONTENT_TYPE -> AudioMpeg
+      log info s"Sending stream to player '${player.user}'..."
+      Ok.chunked(player.stream).as(AudioMpeg).withHeaders(
+        CACHE_CONTROL -> HttpConstants.NoCache
       )
     }
   }
@@ -195,20 +193,21 @@ class Home(beamConf: BeamConf,
       // TODO play with enumerators etc and see if this can be fixed
       streamRefusalResponse(user)
     } else {
-      pushFile(user, streamer)
+      serveFile(user, streamer)
     }
   }
 
-  private def pushFile(user: Username, streamer: StreamManager): EssentialAction = {
-    log info s"Pushing file to user: $user..."
+  private def serveFile(user: Username, streamer: StreamManager): EssentialAction = {
+    log info s"Serving file to user '$user'..."
     streamer.isReceivingStream = true
     // the body parser pushes the request content to streamer.channel
     Action(StreamParsers.multiPartByteStreaming(bytes => Future.successful(streamer.channel.push(bytes)), maxSize)(mat)) { request =>
+      log info s"Served file to '$user'."
+      streamer.eofAndEnd()
       val remoteIP = request.remoteAddress
-      request.body.files.foreach(file => {
-        log info s"Pushed file: ${file.filename} of size: ${file.ref} bytes from: $remoteIP to user: $user"
-        // TODO collect statistics
-      })
+      request.body.files.foreach { file =>
+        log info s"Pushed file '${file.filename}' of size ${file.ref} bytes from '$remoteIP' to user '$user'."
+      }
       streamer.isReceivingStream = false
       Ok
     }
@@ -216,7 +215,7 @@ class Home(beamConf: BeamConf,
 
   private def streamRefusalResponse(user: Username): EssentialAction =
     Action { request =>
-      log warn s"Refused upload from: ${request.remoteAddress} to user: $user because another upload to that user is currently in progress."
+      log warn s"Refused upload from '${request.remoteAddress}' to user '$user' because another upload to that user is currently in progress."
       BadRequest(JsonMessages.failure("Concurrent streaming to the same player is not supported; try again later."))
     }
 

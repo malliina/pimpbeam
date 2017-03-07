@@ -12,10 +12,10 @@ class StreamManager(val rawStream: Enumerator[ByteString],
   var isReceivingStream: Boolean = false
   // Not sure how helpful this is but it does not seem to break things
   // The intention is to reduce the number of HTTP chunks sent per second
-  private val chunker = Enumeratee.grouped(
-    Traversable.take[ByteString](5000) transform Iteratee.consume[ByteString]()
-  )
-  val chunkedStream = rawStream through chunker
+//  private val chunker = Enumeratee.grouped(
+//    Traversable.take[ByteString](5000) transform Iteratee.consume[ByteString]()
+//  )
+  val chunkedStream = rawStream // through chunker
   // Not sure how sharedChunkedStream is better than chunkedStream but
   // using it does not seem to break things
   //  val (sharedChunkedStream, _) = Concurrent.broadcast(chunkedStream)
