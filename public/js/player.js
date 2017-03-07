@@ -171,9 +171,18 @@ var onmessage = function (payload) {
     }
 };
 
+function wsProto(location) {
+    if (location.protocol == "http:") {
+        return "ws";
+    } else {
+        return "wss";
+    }
+}
+
 function initSocket() {
-    // var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
-    var url = "/ws/player?f=json";
+    var location = window.location;
+    var proto = wsProto(location);
+    var url = proto + "://" + location.host + "/ws/player?f=json";
     webSocket = new WebSocket(url);
     webSocket.onopen = onconnect;
     webSocket.onmessage = onmessage;

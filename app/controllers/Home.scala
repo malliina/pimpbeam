@@ -87,22 +87,20 @@ class Home(beamConf: BeamConf,
     }
   }
 
-  /**
-    * Loads an album cover from DiscoGs into memory, then sends it to the client.
+  /** Loads an album cover from DiscoGs into memory, then sends it to the client.
     *
     * Set the route that calls this action as the `src` attribute of an `img` element to display the cover.
     *
     * @return an action that returns the cover of `artist`s `album`
     */
-  def cover(artist: String, album: String) = PlayerSecureAction(player => {
+  def cover(artist: String, album: String) = PlayerSecureAction { player =>
     log info s"Searching for cover: $artist - $album"
     Action.async {
       streamedRequest(disco.request(artist, album), _ => defaultCover)
     }
-  })
+  }
 
-  /**
-    * Performs a web request as configured by `requestHolder` and returns a stream of the response body as a [[Result]].
+  /** Performs a web request as configured by `requestHolder` and returns a stream of the response body as a [[Result]].
     *
     * However, if the request returns with a non-200 status code, `onError` is run and returned.
     *
