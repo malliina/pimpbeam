@@ -12,7 +12,7 @@ import sbtbuildinfo.{BuildInfoKey, BuildInfoPlugin}
 
 object BeamBuild {
   lazy val pimpbeam = PlayProject.default("pimpbeam")
-      .enablePlugins(JavaServerAppPackaging, BuildInfoPlugin)
+    .enablePlugins(JavaServerAppPackaging, BuildInfoPlugin)
     .settings(beamSettings: _*)
 
   lazy val beamSettings = Seq(
