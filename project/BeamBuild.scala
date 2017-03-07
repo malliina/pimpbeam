@@ -16,7 +16,7 @@ object BeamBuild {
     .settings(beamSettings: _*)
 
   lazy val beamSettings = Seq(
-    version := "1.9.0",
+    version := "1.9.1",
     scalaVersion := "2.11.8",
     libraryDependencies ++= deps,
     retrieveManaged := false,
