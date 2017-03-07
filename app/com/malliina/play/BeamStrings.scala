@@ -1,9 +1,5 @@
-package com.mle.play
+package com.malliina.play
 
-/**
- *
- * @author mle
- */
 trait BeamStrings {
   val STATUS = "status"
   val OK = "ok"
@@ -27,4 +23,3 @@ trait BeamStrings {
 }
 
 object BeamStrings extends BeamStrings
-

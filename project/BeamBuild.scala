@@ -1,20 +1,23 @@
-import com.mle.sbt.unix.LinuxKeys.{httpPort, httpsPort}
-import com.mle.sbt.unix.LinuxPlugin
-import com.mle.sbtplay.PlayProjects
-import com.typesafe.sbt.SbtNativePackager.{ Universal, Linux }
+import com.malliina.sbt.unix.LinuxKeys.{httpPort, httpsPort}
+import com.malliina.sbt.unix.LinuxPlugin
+import com.malliina.sbtplay.PlayProject
+import com.typesafe.sbt.SbtNativePackager.{Debian, Linux, Universal}
 import com.typesafe.sbt.packager
+import com.typesafe.sbt.packager.Keys.serverLoading
+import com.typesafe.sbt.packager.archetypes.{JavaServerAppPackaging, ServerLoader}
 import sbt.Keys._
 import sbt._
-import sbtbuildinfo.BuildInfoKey
 import sbtbuildinfo.BuildInfoKeys.{buildInfoKeys, buildInfoPackage}
+import sbtbuildinfo.{BuildInfoKey, BuildInfoPlugin}
 
-object BeamBuild extends Build {
-  lazy val playGround = PlayProjects.plainPlayProject("pimpbeam").settings(beamSettings: _*)
-    .enablePlugins(sbtbuildinfo.BuildInfoPlugin)
+object BeamBuild {
+  lazy val pimpbeam = PlayProject.default("pimpbeam")
+      .enablePlugins(JavaServerAppPackaging, BuildInfoPlugin)
+    .settings(beamSettings: _*)
 
   lazy val beamSettings = Seq(
-    version := "1.8.9",
-    scalaVersion := "2.11.7",
+    version := "1.9.0",
+    scalaVersion := "2.11.8",
     libraryDependencies ++= deps,
     retrieveManaged := false,
     fork in Test := true,
@@ -23,22 +26,21 @@ object BeamBuild extends Build {
 
   def buildMetaSettings = Seq(
     buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion),
-    buildInfoPackage := "com.mle.beam"
+    buildInfoPackage := "com.malliina.beam"
   )
 
   def nativeSettings = LinuxPlugin.playSettings ++ Seq(
-    httpPort in Linux := Option("8456"),
+    httpPort in Linux := Option("disabled"),
     httpsPort in Linux := Option("8457"),
     packager.Keys.maintainer := "Michael Skogberg <malliina123@gmail.com>",
-    javaOptions in Universal += "-Dlogger.resource=prod-logger.xml"
+    javaOptions in Universal += "-Dlogger.resource=prod-logger.xml",
+    serverLoading in Debian := ServerLoader.Systemd
   )
 
-  val myGroup = "com.github.malliina"
+  val malliinaGroup = "com.malliina"
 
   lazy val deps = Seq(
-    "com.newrelic.agent.java" % "newrelic-agent" % "3.1.1" % "provided",
-    myGroup %% "util-play" % "2.0.1",
-    myGroup %% "play-base" % "0.5.1",
+    malliinaGroup %% "util-play" % "3.6.4",
     "net.glxn" % "qrgen" % "1.3"
   )
 }

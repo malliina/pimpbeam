@@ -2,8 +2,8 @@ GET         /                             controllers.Home.index
 GET         /ping                         controllers.Home.ping
 GET         /image                        controllers.Home.image
 GET         /covers/:artist/:album        controllers.Home.cover(artist,album)
-GET         /ws/control                   com.mle.beam.Phones.openSocket
-GET         /ws/player                    com.mle.beam.Players.openSocket
+GET         /ws/control                   com.malliina.beam.Phones.openSocket
+GET         /ws/player                    com.malliina.beam.Players.openSocket
 GET         /streamable                   controllers.Home.playerState
 GET         /stream                       controllers.Home.stream
 POST        /stream                       controllers.Home.resetAndReceiveFile

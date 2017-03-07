@@ -1,6 +1,6 @@
 package tests
 
-import com.mle.http.WebUtils
+import com.malliina.http.WebUtils
 import org.scalatest.FunSuite
 
 /**

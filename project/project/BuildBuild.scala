@@ -1,14 +1,10 @@
 import sbt.Keys._
 import sbt._
 
-/**
- *
- * @author mle
- */
-object BuildBuild extends Build {
+object BuildBuild {
   // "build.sbt" goes here
-  override lazy val settings = super.settings ++ Seq(
-    scalaVersion := "2.10.4",
+  lazy val settings = Seq(
+    scalaVersion := "2.10.6",
     resolvers ++= Seq(
       Resolver.url("malliina bintray sbt", url("https://dl.bintray.com/malliina/sbt-plugins"))(Resolver.ivyStylePatterns),
       "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
@@ -17,17 +13,11 @@ object BuildBuild extends Build {
     scalacOptions ++= Seq("-unchecked", "-deprecation")
   ) ++ sbtPlugins
 
-  val mleGroup = "com.github.malliina"
+  val malliinaGroup = "com.malliina"
 
   def sbtPlugins = Seq(
-    "com.typesafe.play" % "sbt-plugin" % "2.4.2",
-    "com.eed3si9n" % "sbt-buildinfo" % "0.4.0",
-    mleGroup %% "sbt-packager" % "1.8.0",
-    mleGroup %% "sbt-play" % "0.3.1"
+    malliinaGroup %% "sbt-packager" % "2.2.0",
+    malliinaGroup %% "sbt-play" % "0.9.1",
+    "com.eed3si9n" % "sbt-buildinfo" % "0.4.0"
   ) map addSbtPlugin
-
-  override lazy val projects = Seq(root)
-
-  lazy val root = Project("plugins", file("."))
 }
-

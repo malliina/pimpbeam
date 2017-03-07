@@ -171,6 +171,16 @@ var onmessage = function (payload) {
     }
 };
 
+function initSocket() {
+    // var WS = window['MozWebSocket'] ? MozWebSocket : WebSocket;
+    var url = "/ws/player?f=json";
+    webSocket = new WebSocket(url);
+    webSocket.onopen = onconnect;
+    webSocket.onmessage = onmessage;
+    webSocket.onclose = onclose;
+    webSocket.onerror = onerror;
+}
+
 $(document).ready(function () {
-//    player.hide();
+    initSocket();
 });

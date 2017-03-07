@@ -1,21 +1,19 @@
-package com.mle.beam
+package com.malliina.beam
 
+import akka.util.ByteString
 import play.api.libs.iteratee._
-import com.mle.util.Log
-import java.util.UUID
 
 /**
- * http://greweb.me/2012/08/zound-a-playframework-2-audio-streaming-experiment-using-iteratees/
- *
- * @author mle
- */
-class StreamManager(val rawStream: Enumerator[Array[Byte]], val channel: Concurrent.Channel[Array[Byte]]) extends Log {
+  * @see http://greweb.me/2012/08/zound-a-playframework-2-audio-streaming-experiment-using-iteratees/
+  */
+class StreamManager(val rawStream: Enumerator[ByteString],
+                    val channel: Concurrent.Channel[ByteString]) {
   @volatile
   var isReceivingStream: Boolean = false
   // Not sure how helpful this is but it does not seem to break things
   // The intention is to reduce the number of HTTP chunks sent per second
   private val chunker = Enumeratee.grouped(
-    Traversable.take[Array[Byte]](5000) transform Iteratee.consume[Array[Byte]]()
+    Traversable.take[ByteString](5000) transform Iteratee.consume[ByteString]()
   )
   val chunkedStream = rawStream through chunker
   // Not sure how sharedChunkedStream is better than chunkedStream but
@@ -27,10 +25,10 @@ class StreamManager(val rawStream: Enumerator[Array[Byte]], val channel: Concurr
 
 object StreamManager {
   def empty() = {
-    val (rawStream, channel) = Concurrent.broadcast[Array[Byte]]
+    val (rawStream, channel) = Concurrent.broadcast[ByteString]
     fromStream(rawStream, channel)
   }
 
-  def fromStream(rawStream: Enumerator[Array[Byte]], channel: Concurrent.Channel[Array[Byte]]) =
+  def fromStream(rawStream: Enumerator[ByteString], channel: Concurrent.Channel[ByteString]) =
     new StreamManager(rawStream, channel)
 }

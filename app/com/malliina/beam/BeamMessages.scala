@@ -1,28 +1,24 @@
-package com.mle.beam
+package com.malliina.beam
 
-import play.api.libs.json.Json
-import com.mle.play.BeamStrings
-import BeamStrings._
-import Json._
-import com.mle.util.Log
+import com.malliina.play.BeamStrings._
+import com.malliina.play.json.JsonStrings.{Cmd, Event}
+import com.malliina.play.models.Username
+import com.malliina.util.Log
 import play.api.libs.json.JsObject
-import com.mle.play.json.JsonStrings._
+import play.api.libs.json.Json._
 
-/**
- * @author Michael
- */
 trait BeamMessages extends Log {
-  val reset = obj(CMD -> RESET)
+  val reset = obj(Cmd -> RESET)
   val version = obj(VERSION -> BuildInfo.version)
 
-  def playerExists(user: String, exists: Boolean, ready: Boolean) =
+  def playerExists(user: Username, exists: Boolean, ready: Boolean) =
     obj(USER -> user, EXISTS -> exists, READY -> ready)
 
-  def partyDisconnected(user: String) =
+  def partyDisconnected(user: Username) =
     event(DISCONNECTED, USER -> user)
 
   def event(eventType: String, valuePairs: (String, JsValueWrapper)*): JsObject =
-    obj(EVENT -> eventType) ++ obj(valuePairs: _*)
+    obj(Event -> eventType) ++ obj(valuePairs: _*)
 
   def coverAvailable = event(COVER_AVAILABLE, COVER_SOURCE -> COVER_RESOURCE)
 }

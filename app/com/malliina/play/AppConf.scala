@@ -1,8 +1,5 @@
-package com.mle.play
+package com.malliina.play
 
-/**
- * @author Michael
- */
 object AppConf extends PlayLifeCycle {
   override def appName: String = "pimpbeam"
 }
