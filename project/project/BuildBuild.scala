@@ -6,6 +6,7 @@ object BuildBuild {
   lazy val settings = Seq(
     scalaVersion := "2.10.6",
     resolvers ++= Seq(
+      Resolver.bintrayRepo("malliina", "maven"),
       Resolver.url("malliina bintray sbt", url("https://dl.bintray.com/malliina/sbt-plugins"))(Resolver.ivyStylePatterns),
       "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/",
       "Typesafe ivy releases" at "http://repo.typesafe.com/typesafe/ivy-releases/",
