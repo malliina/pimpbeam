@@ -53,22 +53,4 @@ class Players(auth: PlayerSecurity,
       val user = client.user
       phones.usercast(user, BeamMessages.partyDisconnected(user))
     }
-
-  //  def wsUrl(implicit request: RequestHeader): String = {
-  //    // Cannot use routes.Home.wsplay().webSocketURL(Boolean) because:
-  //    // a) When using Azure, the host and port would be the one Play
-  //    //    runs on internally, not the desired external one.
-  //    // b) We don't know whether the request is made over HTTPS or HTTP.
-  //
-  //    // Serves wss if it's available, regardless of what the browser request was
-  //    val server = PlayStarter.serverUtils
-  //    val secured = server.exists(_.isHttpsAvailable)
-  //    val (protocol, port) =
-  //      if (secured) ("wss", Home.beamConf.sslPort)
-  //      else ("ws", Home.beamConf.port)
-  //    val domain = request.domain
-  //    val actualPort = if (domain == "localhost" && server.isEmpty) 9000 else port
-  //    val url = routes.Home.wsplay().url
-  //    s"$protocol://$domain:$actualPort$url"
-  //  }
 }
