@@ -13,7 +13,7 @@ object BeamBuild {
     .settings(beamSettings: _*)
 
   lazy val beamSettings = nativeSettings ++ buildMetaSettings ++ Seq(
-    version := "1.9.3",
+    version := "1.9.4",
     scalaVersion := "2.11.8",
     libraryDependencies ++= Seq(
       "com.malliina" %% "util-play" % "3.6.4",
