@@ -16,6 +16,7 @@
         <secure>true</secure>
         <username>${LOGSTREAMS_USER:-pimpbeam}</username>
         <password>changeme</password>
+        <enabled>false</enabled>
     </appender>
     <logger name="play" level="INFO"/>
     <logger name="application" level="INFO"/>
