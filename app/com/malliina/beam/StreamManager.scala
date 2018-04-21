@@ -1,34 +1,50 @@
 package com.malliina.beam
 
+import java.util.concurrent.atomic.AtomicBoolean
+
+import akka.NotUsed
+import akka.stream.scaladsl.{Source, SourceQueue}
+import akka.stream.{Materializer, QueueOfferResult}
 import akka.util.ByteString
-import play.api.libs.iteratee._
+
+import scala.concurrent.Future
 
 /**
   * @see http://greweb.me/2012/08/zound-a-playframework-2-audio-streaming-experiment-using-iteratees/
   */
-class StreamManager(val rawStream: Enumerator[ByteString],
-                    val channel: Concurrent.Channel[ByteString]) {
+class StreamManager(val stream: Source[ByteString, _],
+                    val channel: SourceQueue[Option[ByteString]]) extends StreamEndpoint {
+  val isClosed = new AtomicBoolean(false)
   @volatile
   var isReceivingStream: Boolean = false
-  // Not sure how helpful this is but it does not seem to break things
-  // The intention is to reduce the number of HTTP chunks sent per second
-//  private val chunker = Enumeratee.grouped(
-//    Traversable.take[ByteString](5000) transform Iteratee.consume[ByteString]()
-//  )
-  val chunkedStream = rawStream // through chunker
-  // Not sure how sharedChunkedStream is better than chunkedStream but
-  // using it does not seem to break things
-  //  val (sharedChunkedStream, _) = Concurrent.broadcast(chunkedStream)
 
-  def eofAndEnd(): Unit = channel.eofAndEnd()
+  def send(t: ByteString): Future[QueueOfferResult] = {
+    if (!isClosed.get()) channel.offer(Option(t))
+    else closed
+  }
+
+  def close(): Future[QueueOfferResult] = {
+    val wasOpen = isClosed.compareAndSet(false, true)
+    if (wasOpen) channel.offer(None)
+    else closed
+  }
+
+  def closed = Future.successful(QueueOfferResult.QueueClosed)
 }
 
 object StreamManager {
-  def empty() = {
-    val (rawStream, channel) = Concurrent.broadcast[ByteString]
-    fromStream(rawStream, channel)
+  def empty(mat: Materializer) = {
+    val (queue, source) = Streaming.sourceQueue[ByteString](mat)
+
+    apply(source, queue)
   }
 
-  def fromStream(rawStream: Enumerator[ByteString], channel: Concurrent.Channel[ByteString]) =
-    new StreamManager(rawStream, channel)
+  def apply(stream: Source[ByteString, NotUsed], channel: SourceQueue[Option[ByteString]]) =
+    new StreamManager(stream, channel)
+}
+
+trait StreamEndpoint {
+  def send(bytes: ByteString): Future[QueueOfferResult]
+
+  def close(): Future[QueueOfferResult]
 }

@@ -1,15 +1,11 @@
 package com.malliina.beam
 
-import akka.stream.Materializer
 import com.malliina.http.WebUtils
-import play.api.libs.ws.WSRequest
-import play.api.libs.ws.ahc.AhcWSClient
+import play.api.libs.ws.{WSClient, WSRequest}
 
-class DiscoGs(mat: Materializer) {
-  implicit val client = AhcWSClient()(mat)
-
+class DiscoGs(http: WSClient) {
   def request(artist: String, album: String): WSRequest =
-    client.url(coverUrl(artist, album))
+    http.url(coverUrl(artist, album))
 
   def coverUrl(artist: String, album: String): String = {
     val artistEnc = WebUtils.encodeURIComponent(artist)
@@ -17,5 +13,5 @@ class DiscoGs(mat: Materializer) {
     s"https://api.musicpimp.org/covers?artist=$artistEnc&album=$albumEnc"
   }
 
-  def close(): Unit = client.close()
+  def close(): Unit = http.close()
 }

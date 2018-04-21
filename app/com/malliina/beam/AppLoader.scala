@@ -1,32 +1,36 @@
 package com.malliina.beam
 
 import com.malliina.beam.AppComponents.log
+import com.malliina.play.ActorExecution
 import com.malliina.play.app.DefaultApp
-import controllers.{Assets, Home}
+import controllers.{AssetsComponents, Home}
 import play.api.ApplicationLoader.Context
+import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.routing.Router
 import play.api.{BuiltInComponentsFromContext, Logger}
+import play.filters.HttpFiltersComponents
+import play.filters.hosts.AllowedHostsConfig
 import router.Routes
 
 import scala.concurrent.Future
 
 class AppLoader extends DefaultApp(ctx => new AppComponents(ctx))
 
-class AppComponents(context: Context) extends BuiltInComponentsFromContext(context) {
+class AppComponents(context: Context)
+  extends BuiltInComponentsFromContext(context)
+    with AssetsComponents
+    with HttpFiltersComponents
+    with AhcWSComponents {
+
+  override lazy val allowedHostsConfig = AllowedHostsConfig(Seq("localhost", "beam.musicpimp.org"))
   implicit val ec = materializer.executionContext
   // Services
-  val disco = new DiscoGs(materializer)
-  val playerSec = new PlayerSecurity(materializer)
-  val phoneClients = new BeamClientStore[BeamClient]()
-  val playerClients = new BeamClientStore[PlayerClient]()
-  val players = new Players(playerSec, playerClients, phoneClients, materializer)
-  val phoneSec = new PhoneSecurity(players, materializer)
-  val phones = new Phones(phoneSec, phoneClients, playerClients, materializer)
+  val disco = new DiscoGs(wsClient)
+  val beams = Beams(ActorExecution(actorSystem, materializer))
   val conf = new ConfReader(configuration).load
   // Controllers
-  lazy val assets = new Assets(httpErrorHandler)
-  val home = new Home(conf, players, phoneClients, disco, materializer)
-  override val router: Router = new Routes(httpErrorHandler, home, phones, players, assets)
+  val home = new Home(conf, beams, disco, materializer, httpErrorHandler, controllerComponents)
+  override val router: Router = new Routes(httpErrorHandler, home, beams, assets)
 
   log info s"Started MusicBeamer endpoint. Advertising address: ${conf.host}:${conf.port}/${conf.sslPort}."
 

@@ -1,16 +1,22 @@
 import com.malliina.sbtplay.PlayProject
+import play.sbt.PlayImport
 
 lazy val p = PlayProject.linux("pimpbeam")
 
-version := "1.9.4"
-scalaVersion := "2.11.8"
+version := "2.0.0"
+scalaVersion := "2.12.5"
 libraryDependencies ++= Seq(
-  "com.malliina" %% "util-play" % "3.6.4",
-  "net.glxn" % "qrgen" % "1.3"
+  "com.malliina" %% "util-play" % "4.11.1",
+  "net.glxn" % "qrgen" % "1.3",
+  PlayImport.ws
+)
+dependencyOverrides ++= Seq(
+  "com.typesafe.akka" %% "akka-stream" % "2.5.8",
+  "com.typesafe.akka" %% "akka-actor" % "2.5.8"
 )
 resolvers += Resolver.bintrayRepo("malliina", "maven")
-httpPort in Linux := Option("disabled")
-httpsPort in Linux := Option("8457")
+httpPort in Linux := Option("8557")
+httpsPort in Linux := Option("disabled")
 maintainer := "Michael Skogberg <malliina123@gmail.com>"
 javaOptions in Universal += "-Dlogger.resource=prod-logger.xml"
 buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion)

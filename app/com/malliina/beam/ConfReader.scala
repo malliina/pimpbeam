@@ -17,9 +17,9 @@ class ConfReader(conf: Configuration) extends BaseConfigReader[BeamConf] {
     fromEnvOpt orElse fromSysPropsOpt orElse fromAppConfOpt orElse Some(defaultConf)
 
   def fromAppConfOpt = for {
-    host <- conf.getString(hostKey)
-    port <- conf.getInt(portKey)
-    sslPort <- conf.getInt(sslPortKey)
+    host <- conf.getOptional[String](hostKey)
+    port <- conf.getOptional[Int](portKey)
+    sslPort <- conf.getOptional[Int](sslPortKey)
   } yield BeamConf(host, port, sslPort)
 
   def fromMapOpt(map: Map[String, String]): Option[BeamConf] =

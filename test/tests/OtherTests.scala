@@ -4,9 +4,7 @@ import com.malliina.http.WebUtils
 import org.scalatest.FunSuite
 
 /**
- *
- * @author mle
- */
+  */
 class OtherTests extends FunSuite {
   test("WebUtils.encodeURIComponent") {
     val artist = WebUtils.encodeURIComponent("iron maiden")

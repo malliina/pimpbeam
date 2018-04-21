@@ -2,11 +2,13 @@ package controllers
 
 import java.util.UUID
 
-import akka.stream.Materializer
+import akka.stream.{Materializer, QueueOfferResult}
+import akka.stream.QueueOfferResult.{Dropped, Enqueued, Failure, QueueClosed}
+import akka.util.ByteString
 import com.malliina.beam._
-import com.malliina.play.AppConf
 import com.malliina.play.BeamStrings._
-import com.malliina.play.auth.BasicCredentials
+import com.malliina.play.auth.Authenticator.Outcome
+import com.malliina.play.auth.{Auth, AuthFailure, BasicCredentials, InvalidCredentials}
 import com.malliina.play.controllers.{BaseSecurity, Caching}
 import com.malliina.play.http.HttpConstants
 import com.malliina.play.http.HttpConstants.AudioMpeg
@@ -14,17 +16,18 @@ import com.malliina.play.json.JsonMessages
 import com.malliina.play.models.{Password, Username}
 import com.malliina.play.streams.StreamParsers
 import com.malliina.storage.StorageInt
-import controllers.Home.{isHttpAvailable, isHttpsAvailable, log}
+import controllers.Home.log
 import net.glxn.qrgen.QRCode
 import play.api.Logger
-import play.api.http.{HeaderNames, MimeTypes}
-import play.api.libs.iteratee._
+import play.api.http.{HeaderNames, HttpEntity, HttpErrorHandler, MimeTypes}
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json._
+import play.api.libs.streams.Accumulator
 import play.api.libs.ws.WSRequest
 import play.api.mvc._
 
 import scala.concurrent.Future
+import scala.util.Try
 
 /**
   * @see http://greweb.me/2012/08/zound-a-playframework-2-audio-streaming-experiment-using-iteratees/
@@ -33,8 +36,8 @@ object Home {
   private val log = Logger(getClass)
 
   // reads settings
-  lazy val isHttpAvailable = AppConf.isHttpAvailable
-  lazy val isHttpsAvailable = AppConf.isHttpsAvailable
+  //  lazy val isHttpAvailable = AppConf.isHttpAvailable
+  //  lazy val isHttpsAvailable = AppConf.isHttpsAvailable
 
   def validateCredentials(creds: BasicCredentials): Boolean = {
     val user = creds.username
@@ -48,12 +51,15 @@ object Home {
 }
 
 class Home(beamConf: BeamConf,
-           players: Players,
-           phones: BeamClientStore[BeamClient],
+           beams: Beams,
            disco: DiscoGs,
-           mat: Materializer)
-  extends BaseSecurity(mat)
-    with Controller {
+           mat: Materializer,
+           errorHandler: HttpErrorHandler,
+           comps: ControllerComponents)
+  extends AbstractController(comps) {
+  implicit val m = mat
+  implicit val ec = mat.executionContext
+  val sessionKey = "username"
   val maxSize = 1024.megs
 
   def ping = Action(Caching.NoCacheOk(BeamMessages.version))
@@ -68,9 +74,7 @@ class Home(beamConf: BeamConf,
     val user = UUID.randomUUID().toString
     val remoteIP = request.remoteAddress
     log info s"Created user '$user' from '$remoteIP'."
-    Ok(BeamTags.index).withSession(
-      Security.username -> user
-    )
+    Ok(BeamTags.index).withSession(sessionKey -> user)
   }
 
   /**
@@ -82,8 +86,7 @@ class Home(beamConf: BeamConf,
       val qrText = stringify(coordinate(user))
       log info s"Generating image with QR code: $qrText"
       val qrFile = QRCode.from(qrText).withSize(768, 768).file()
-      val enumerator = Enumerator.fromFile(qrFile)
-      Caching.NoCache(Ok.chunked(enumerator))
+      Caching.NoCache(Ok.sendFile(qrFile))
     }
   }
 
@@ -110,34 +113,30 @@ class Home(beamConf: BeamConf,
     * @see https://www.playframework.com/documentation/2.3.x/ScalaWS
     */
   def streamedRequest(requestHolder: WSRequest, onError: Int => Result = Status): Future[Result] = {
-    requestHolder.getStream().map(pair => {
-      val (response, body) = pair
-
+    requestHolder.stream().map { response =>
       def header(name: String) = response.headers.get(name).flatMap(_.headOption)
 
       val statusCode = response.status
       if (statusCode == play.api.http.Status.OK) {
         val contentType = header(HeaderNames.CONTENT_TYPE) getOrElse MimeTypes.BINARY
-        header(HeaderNames.CONTENT_LENGTH).map(length => {
-          Ok.feed(body).as(contentType).withHeaders(HeaderNames.CONTENT_LENGTH -> length)
-        }).getOrElse {
-          Ok.chunked(body).as(contentType)
-        }
+        val contentLength = header(HeaderNames.CONTENT_LENGTH).flatMap(s => Try(s.toLong).toOption)
+        val entity = HttpEntity.Streamed(response.bodyAsSource, contentLength, Option(contentType))
+        Ok.sendEntity(entity)
       } else {
         onError(statusCode)
       }
-    })
+    }
   }
 
-  def defaultCover = Redirect(routes.Assets.at("img/guitar.png"))
+  def defaultCover = Redirect(routes.Assets.versioned("img/guitar.png"))
 
   private def coordinate(user: Username): JsObject = obj(
     BEAM_HOST -> beamConf.host,
     PORT -> beamConf.port,
     SSL_PORT -> beamConf.sslPort,
     USER -> user,
-    SUPPORTS_PLAINTEXT -> isHttpAvailable,
-    SUPPORTS_TLS -> isHttpsAvailable
+    SUPPORTS_PLAINTEXT -> false,
+    SUPPORTS_TLS -> true
   )
 
   /** Opens a connection to the client by returning a chunked HTTP response. This connection streams music to the client.
@@ -157,13 +156,14 @@ class Home(beamConf: BeamConf,
   // Phone actions
 
   def playerState = PhoneLimitedSecureAction { user =>
-    Action { req =>
-      val (exists, ready) = players.connections.client(user).map(player => {
-        val isReady = !player.streamer.isReceivingStream
-        (true, isReady)
-      }).getOrElse((false, false))
-      val json = BeamMessages.playerExists(user, exists, ready)
-      Caching.NoCacheOk(json)
+    Action.async { _ =>
+      beams.findPlayer(user).map { maybePlayer =>
+        val json = BeamMessages.playerExists(
+          user,
+          maybePlayer.isDefined,
+          maybePlayer.exists(p => !p.streamer.isReceivingStream))
+        Caching.NoCacheOk(json)
+      }
     }
   }
 
@@ -180,7 +180,7 @@ class Home(beamConf: BeamConf,
     */
   def receiveFile = PhoneSecureAction(tryPushFile)
 
-  def clientFor(user: Username) = phones.client(user)
+//  def clientFor(user: Username) = phones.client(user)
 
   private def tryPushFile(player: PlayerClient): EssentialAction = {
     val user = player.user
@@ -200,16 +200,27 @@ class Home(beamConf: BeamConf,
   private def serveFile(user: Username, streamer: StreamManager): EssentialAction = {
     log info s"Serving file to user '$user'..."
     streamer.isReceivingStream = true
-    // the body parser pushes the request content to streamer.channel
-    Action(StreamParsers.multiPartByteStreaming(bytes => Future.successful(streamer.channel.push(bytes)), maxSize)(mat)) { request =>
+    // the body parser pushes the request content to the player through `streamer.send`
+    val parser = StreamParsers.multiPartByteStreaming(bytes => streamer.send(bytes).map(analyzeResult(streamer, bytes, _)), maxSize, errorHandler)
+    Action(parser) { request =>
       log info s"Served file to '$user'."
-      streamer.eofAndEnd()
+      streamer.close()
       val remoteIP = request.remoteAddress
       request.body.files.foreach { file =>
         log info s"Pushed file '${file.filename}' of size ${file.ref} bytes from '$remoteIP' to user '$user'."
       }
       streamer.isReceivingStream = false
       Ok
+    }
+  }
+
+  protected def analyzeResult(dest: StreamEndpoint, bytes: ByteString, result: QueueOfferResult): Unit = {
+    val suffix = s" for ${bytes.length} bytes"
+    result match {
+      case Enqueued => ()
+      case Dropped => log.warn(s"Offer dropped$suffix")
+      case Failure(t) => log.error(s"Offer failed$suffix", t)
+      case QueueClosed => () //log.error(s"Queue closed$suffix")
     }
   }
 
@@ -231,30 +242,61 @@ class Home(beamConf: BeamConf,
     * Checks that credentials in the header exist, but does not check whether a corresponding player is connected. So
     * this validation is not sufficient to allow file uploads.
     */
-  def PhoneLimitedSecureAction(f: Username => EssentialAction) =
-    authenticatedAsync(headerUsername, onUnauthorized)(f)
+  def PhoneLimitedSecureAction(f: Username => EssentialAction) = {
+    authenticatedAsync(authHeader, onUnauthorized)(f)
+  }
 
   /** Authenticated action for connected players.
     *
     * Checks the session username and requires a previously open player connection.
     */
   def PlayerSecureAction(f: PlayerClient => EssentialAction) =
-    authenticatedAsync(players.auth, onUnauthorized)(f)
+    authenticatedAsync(beams.authPlayer, onUnauthorized)(f)
 
   /**
     * Checks that a username is set in the session.
     */
   def PlayerLimitedSecureAction(f: Username => EssentialAction) =
-    authenticatedAsync(players.authUser, onUnauthorized)(a => f(a.user))
+    authenticatedAsync(beams.authUser, onUnauthorized)(a => f(a))
 
-  private def authenticatePhone(request: RequestHeader): Future[Option[PlayerClient]] =
-    headerUsername(request) map { maybeUser =>
-      maybeUser flatMap { user => players.connections.client(user) }
+  private def authenticatePhone(request: RequestHeader): Future[Outcome[PlayerClient]] =
+    headerUsername(request).map { user =>
+      beams.findPlayer(user)
+    }.getOrElse {
+      Future.successful(None)
+    }.map(_.toRight(InvalidCredentials(request)))
+
+  private def authHeader(rh: RequestHeader) =
+    Future.successful(headerUsername(rh).toRight(InvalidCredentials(rh)))
+
+  private def headerUsername(request: RequestHeader): Option[Username] = {
+    Auth.basicCredentials(request).flatMap { creds =>
+      val isValid = Home.validateCredentials(creds)
+      if(isValid) Option(creds.username) else None
+    }
+  }
+
+//  override def validateCredentials(creds: BasicCredentials): Future[Boolean] =
+//    Future.successful(Home.validateCredentials(creds))
+
+  /** Async version of Security.Authenticated.
+    *
+    * @param auth           auth function
+    * @param onUnauthorized callback if auth fails
+    * @param action         authenticated action
+    * @return an authenticated action
+    */
+  def authenticatedAsync[A](auth: RequestHeader => Future[Either[AuthFailure, A]],
+                            onUnauthorized: AuthFailure => Result)(action: A => EssentialAction): EssentialAction =
+    EssentialAction { rh =>
+      val futureAccumulator = auth(rh) map { authResult =>
+        authResult.fold(
+          failure => Accumulator.done(onUnauthorized(failure)),
+          success => action(success).apply(rh)
+        )
+      }
+      Accumulator.flatten(futureAccumulator)(mat)
     }
 
-  private def headerUsername(request: RequestHeader): Future[Option[Username]] =
-    authenticateFromHeader(request)
-
-  override def validateCredentials(creds: BasicCredentials): Future[Boolean] =
-    Future.successful(Home.validateCredentials(creds))
+  def onUnauthorized(failure: AuthFailure) = Unauthorized
 }
