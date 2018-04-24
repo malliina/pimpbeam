@@ -50,10 +50,10 @@ object BeamTags extends Bootstrap(Tags) with PlayTags {
         )
       ),
       div(id := "playback", `class` := "hidden")(
-        rowColumn(col.md.six + col.md.offset.width("3"))(
+        rowColumn(col.md.six + " " + col.md.offset.width("3"))(
           audio(id := "player", autoplay, preload := "none", controls)("You need to update your browser to support this feature.")
         ),
-        rowColumn(col.md.six + col.md.offset.width("3"))(
+        rowColumn(col.md.six + " " + col.md.offset.width("3"))(
           img(id := "cover", src := versioned("img/guitar.png"))
         )
       ),
