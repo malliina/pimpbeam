@@ -9,6 +9,7 @@ import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.routing.Router
 import play.api.{BuiltInComponentsFromContext, Logger}
 import play.filters.HttpFiltersComponents
+import play.filters.headers.SecurityHeadersConfig
 import play.filters.hosts.AllowedHostsConfig
 import router.Routes
 
@@ -22,6 +23,19 @@ class AppComponents(context: Context)
     with HttpFiltersComponents
     with AhcWSComponents {
 
+  val allowedCsp = Seq(
+    "netdna.bootstrapcdn.com",
+    "code.jquery.com",
+    "cdnjs.cloudflare.com",
+    "fonts.gstatic.com",
+    "use.fontawesome.com",
+    "fonts.googleapis.com",
+    "ajax.googleapis.com"
+  )
+  val allowedEntry = allowedCsp.mkString(" ")
+
+  val csp = s"default-src 'self' 'unsafe-inline' $allowedEntry; connect-src *; img-src 'self' data:;"
+  override lazy val securityHeadersConfig = SecurityHeadersConfig(contentSecurityPolicy = Option(csp))
   override lazy val allowedHostsConfig = AllowedHostsConfig(Seq("localhost", "beam.musicpimp.org"))
   implicit val ec = materializer.executionContext
   // Services
