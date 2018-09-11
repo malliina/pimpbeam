@@ -5,7 +5,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.malliina.beam.PlayerClient.log
-import com.malliina.play.models.Username
+import com.malliina.values.Username
 import play.api.Logger
 
 object PlayerClient {

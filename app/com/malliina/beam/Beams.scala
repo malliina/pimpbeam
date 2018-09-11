@@ -10,15 +10,15 @@ import com.malliina.play.ActorExecution
 import com.malliina.play.auth.Authenticator.Outcome
 import com.malliina.play.auth.{Auth, BasicCredentials, InvalidCredentials, UserAuthenticator}
 import com.malliina.play.json.JsonMessages
-import com.malliina.play.models.Username
 import com.malliina.play.ws.{ActorConfig, JsonActor, Sockets}
+import com.malliina.values.Username
 import controllers.Home
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc.RequestHeader
 
-import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 
 object Beams {
   private val log = Logger(getClass)
@@ -27,8 +27,8 @@ object Beams {
 }
 
 class Beams(ctx: ActorExecution) {
-  implicit val timeout = Timeout(10.seconds)
-  implicit val ec = ctx.executionContext
+  implicit val timeout: Timeout = Timeout(10.seconds)
+  implicit val ec: ExecutionContext = ctx.executionContext
   val mediator = ctx.actorSystem.actorOf(BeamMediator.props(ctx.materializer))
 
   val playerAuthenticator = UserAuthenticator.session()

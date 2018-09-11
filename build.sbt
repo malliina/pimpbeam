@@ -3,11 +3,11 @@ import play.sbt.PlayImport
 
 lazy val p = PlayProject.linux("pimpbeam")
 
-version := "2.0.0"
-scalaVersion := "2.12.5"
+version := "2.1.0"
+scalaVersion := "2.12.6"
 libraryDependencies ++= Seq(
-  "com.malliina" %% "util-play" % "4.11.1",
-  "com.malliina" %% "logstreams-client" % "1.0.0",
+  "com.malliina" %% "util-play" % "4.14.0",
+  "com.malliina" %% "logstreams-client" % "1.2.0",
   "net.glxn" % "qrgen" % "1.3",
   PlayImport.ws
 )

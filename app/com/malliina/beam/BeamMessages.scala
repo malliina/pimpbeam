@@ -2,12 +2,11 @@ package com.malliina.beam
 
 import com.malliina.play.BeamStrings._
 import com.malliina.play.json.JsonStrings.{Cmd, Event}
-import com.malliina.play.models.Username
-import com.malliina.util.Log
+import com.malliina.values.Username
 import play.api.libs.json.JsObject
 import play.api.libs.json.Json._
 
-trait BeamMessages extends Log {
+trait BeamMessages {
   val reset = obj(Cmd -> RESET)
   val version = obj(VERSION -> BuildInfo.version)
 

@@ -2,20 +2,20 @@ package controllers
 
 import java.util.UUID
 
-import akka.stream.{Materializer, QueueOfferResult}
 import akka.stream.QueueOfferResult.{Dropped, Enqueued, Failure, QueueClosed}
+import akka.stream.{Materializer, QueueOfferResult}
 import akka.util.ByteString
 import com.malliina.beam._
 import com.malliina.play.BeamStrings._
 import com.malliina.play.auth.Authenticator.Outcome
 import com.malliina.play.auth.{Auth, AuthFailure, BasicCredentials, InvalidCredentials}
-import com.malliina.play.controllers.{BaseSecurity, Caching}
+import com.malliina.play.controllers.Caching
 import com.malliina.play.http.HttpConstants
 import com.malliina.play.http.HttpConstants.AudioMpeg
 import com.malliina.play.json.JsonMessages
-import com.malliina.play.models.{Password, Username}
 import com.malliina.play.streams.StreamParsers
 import com.malliina.storage.StorageInt
+import com.malliina.values.{Password, Username}
 import controllers.Home.log
 import net.glxn.qrgen.QRCode
 import play.api.Logger
@@ -179,8 +179,6 @@ class Home(beamConf: BeamConf,
     * Adds the uploaded file to the playlist.
     */
   def receiveFile = PhoneSecureAction(tryPushFile)
-
-//  def clientFor(user: Username) = phones.client(user)
 
   private def tryPushFile(player: PlayerClient): EssentialAction = {
     val user = player.user
